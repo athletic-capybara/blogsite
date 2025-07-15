@@ -1,0 +1,218 @@
+// General & Layout
+img.centered {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+figcaption {
+  text-align: center;
+}
+
+.row-game {
+  display: -ms-flex;
+  display: -webkit-flex;
+  display: flex;
+
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+    float: none;
+  }
+
+  .column .team-logo-large {
+    width: 70%;
+    max-height: 150px;
+    object-fit: contain;
+  }
+}
+
+/* Clear floats after the columns */
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+  float: none;
+}
+
+.column {
+  width: 50%;
+  flex: 1;
+
+  @media all and (max-width: 600px) {
+    float: none;
+    width: 100%;
+  }
+}
+
+.block {
+  float: none;
+  width: 100%;
+}
+
+.align-right {
+  text-align: right;
+}
+.align-center {
+  text-align: center;
+}
+.align-left {
+  text-align: left;
+}
+
+// Football Field & Player Styles
+.football_field_background {
+  background-image: url("../img/field.png");
+}
+
+.football_field {
+  position: relative;
+}
+
+.player {
+  display: inline-block;
+  position: absolute;
+  width: 19%;
+  margin: 0;
+
+  img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 50%;
+    border: 2px solid #cccccc;
+    width: 50%;
+  }
+
+  &.sub {
+    position: static !important;
+  }
+
+  &.static {
+    position: static !important;
+    font-size: 12px;
+    width: auto;
+    vertical-align: middle;
+    margin: auto;
+
+    img {
+      width: 3em !important;
+      max-width: 3em !important;
+    }
+
+    span {
+      text-align: center;
+      font-size: 12px;
+      white-space: nowrap;
+      margin-left: auto;
+      margin-right: 0;
+      vertical-align: middle;
+    }
+  }
+
+  // Player Positions
+  &.GK { // GK
+    bottom: 2%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  // Defenders
+  &.LWB { bottom: 35%; left: 5%; }
+  &.LB { bottom: 20%; left: 8%; }
+  &.LCB2 { bottom: 20%; left: 20%; }
+  &.LCB { bottom: 20%; left: 30%; }
+  &.CB { bottom: 20%; left: 50%; transform: translateX(-50%); }
+  &.RCB { bottom: 20%; right: 30%; }
+  &.RCB2 { bottom: 20%; right: 20%; }
+  &.RB { bottom: 20%; right: 8%; }
+  &.RWB { bottom: 35%; right: 5%; }
+
+  // Defending Midfielders
+  &.LDM { bottom: 35%; left: 30%; }
+  &.CDM { bottom: 35%; left: 50%; transform: translateX(-50%); }
+  &.RDM { bottom: 35%; right: 30%; }
+
+  // Midfielders
+  &.LM { bottom: 50%; left: 8%; }
+  &.LCM { bottom: 50%; left: 30%; }
+  &.CM { bottom: 50%; left: 50%; transform: translateX(-50%); }
+  &.RCM { bottom: 50%; right: 30%; }
+  &.RM { bottom: 50%; right: 8%; }
+
+  // Wingers & Attacking Midfielders
+  &.LW { bottom: 65%; left: 10%; }
+  &.LAM { bottom: 65%; left: 20%; }
+  &.CAM { bottom: 65%; left: 50%; transform: translateX(-50%); }
+  &.RAM { bottom: 65%; right: 20%; }
+  &.RW { bottom: 65%; right: 10%; }
+
+  // Strikers
+  &.LS { bottom: 79%; left: 25%; }
+  &.ST { bottom: 79%; left: 50%; transform: translateX(-50%); }
+  &.RS { bottom: 79%; right: 25%; }
+}
+
+td.player-td {
+  text-align: left;
+  margin: auto;
+}
+
+.player-game-result {
+  color: #555;
+  font-size: smaller;
+}
+
+// Squad Variations
+.team-page-squad .player p {
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-bottom: 15px;
+}
+
+.game-page-squad .player p {
+  text-align: center;
+  font-size: clamp(8px, 0.8vw, 12px);
+  white-space: nowrap;
+  margin-bottom: 15px;
+}
+
+// Tables & Logos
+table {
+  text-align: center;
+
+  &.playerlist {
+    img {
+      width: 40px;
+    }
+    th, td {
+      padding: 0.3em;
+    }
+  }
+}
+
+.team-logo {
+  height: 30px !important;
+  padding: 0.1em;
+  object-fit: contain;
+}
+
+.team-page-logo {
+  width: 20%;
+  max-height: 150px;
+  object-fit: contain;
+}
+
+// Misc
+.cur-season-line {
+  font-weight: bold;
+}
+
+iframe {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  min-height: 400px;
+}

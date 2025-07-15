@@ -1,0 +1,43 @@
+<footer class="site-footer h-card">
+  <data class="u-url" href="{{ "/" | relative_url }}"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li><a href="/about"> {{ site.about_text | escape }}</a></li>
+          
+        </ul>
+        <p class="p-name">
+            {%- if site.author -%}
+              {{ site.author | escape }}
+            {%- endif -%}
+        </p>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <a href="https://www.youtube.com/">
+          <i class="fa-brands fa-youtube"></i>
+        </a>
+        <a href="https://www.instagram.com/">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+        <a href="https://www.douyin.com/user/">
+          <i class="fa-brands fa-tiktok"></i>
+        </a>
+        <a href="https://www.xiaohongshu.com/user/profile/">
+          <img style="height: 1em; vertical-align:middle;" src="/assets/xhs.svg"></img>
+        </a>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>{% include i18n_field.html entity=site field="description" %}</p>
+        <p>powered by<br/>  <a href="https://github.com/super-unprofessional-league/soccer-website-generator">Super Unprofessional League Website Generator</a></p>
+      </div>
+
+    </div>
+
+  </div>
+
+</footer>
