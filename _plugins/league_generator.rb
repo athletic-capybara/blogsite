@@ -884,290 +884,291 @@ module League
             # team_key => { season_key => stats }
             site.data['history_teams_stats'] = Hash.new
 
+            if site.data['seasons'] != nil
+                site.data['seasons'].each do |season|
+                    # convert nilClass to array
 
-            site.data['seasons'].each do |season|
-                # convert nilClass to array
+                    config = season[1]['config']
 
-                config = season[1]['config']
+                    # --------------------------------------------------------------
+                    # Player contests special
 
-                # --------------------------------------------------------------
-                # Player contests special
+                    if config != nil and config['type'] == 'player contest'
+                        season_name = season[0]
+                        if config['display_name'] != nil
+                            season_name = config['display_name']
+                        end
 
-                if config != nil and config['type'] == 'player contest'
+                        team_info = season[1][config['team_info']]
+
+                        site.pages << PlayerContestSeasonPage.new(site, site.source, File.join('seasons', season[0]), season[0], team_info, config)
+                        next
+                    end
+                    # -------------------------------------------------------------
+
+                    generate_interested_teams_gamepage_only = false
+                    if config['interested_teams'] != nil
+                        interested_teams = Set.new(config['interested_teams'])
+                        generate_interested_teams_gamepage_only = true
+                    end
+
+                    team_hash = season[1]['teams']
+                    team_hash.each do |key, team|
+                        team['games'] = Array.new
+                        team['key'] = key
+
+                        team['player_hash'] = Hash.new
+                        if team['players'] != nil
+                            
+                            starting = team['players']['starting']
+                            if starting != nil
+                                starting.each do |p|
+                                    p['goals'] = 0
+                                    p['penalty'] = 0
+                                    p['assists'] = 0
+                                    p['penalty_make'] = 0
+                                    team['player_hash'][p['name']] = p
+                                end
+                            end
+
+                            subs = team['players']['subs']
+                            if subs != nil
+                                subs.each do |p|
+                                    p['goals'] = 0
+                                    p['penalty'] = 0
+                                    p['assists'] = 0
+                                    p['penalty_make'] = 0
+                                    team['player_hash'][p['name']] = p
+                                end
+                            end
+                        end
+
+                        # team['players']['starting'].each{|p| puts p}
+                    end
+                    # team_array = (team_hash.to_a).map{|key, team| team}
+
+                    
+
+                    games_pair = season[1]['games'].to_a
+
+                    # puts games_pair
+
+                    games_hash = Hash.new
+
+                    
+                    # generate each game page
+                    games_pair.each do |p|
+                        key = p[0]
+                        game = p[1]
+                        games_hash[key] = game
+                        # puts key
+                        # puts game
+
+                        # puts game['away']['key']
+
+                        home_team = team_hash[game['home']['key']]
+                        away_team = team_hash[game['away']['key']]
+
+                        if home_team == nil
+                            home_team = {
+                                "display_name" => game['home']['key'],
+                                "logo" => "question-mark.png"
+                            }
+                        else
+                            home_team['games'] << p
+                        end
+                        if away_team == nil
+                            away_team = {
+                                "display_name" => game['away']['key'],
+                                "logo" => "question-mark.png"
+                            }
+                        else
+                            away_team['games'] << p
+                        end
+
+                        if home_team['players'] == nil
+                            home_team['players'] = {
+                                "starting" => [],
+                                "subs" => []
+                            }
+                        end
+                        if away_team['players'] == nil
+                            away_team['players'] = {
+                                "starting" => [],
+                                "subs" => []
+                            }
+                        end
+
+                        game['home']['display_name'] = home_team['display_name']
+                        game['home']['display_name_zh'] = home_team['display_name_zh']
+                        game['home']['logo'] = home_team['logo']
+                        game['away']['display_name'] = away_team['display_name']
+                        game['away']['display_name_zh'] = away_team['display_name_zh']
+                        game['away']['logo'] = away_team['logo']
+
+                        if game['home']['events'] != nil
+                            game['home']['events'].each do |e|
+                                if e['type'] == 'goal' or e['type'] == 'penalty'
+                                    next if e['player'] == '??'
+                                    add_player_to_goal_scorers(e, home_team, team_hash)
+
+                                    if e['assist'] != nil
+                                        add_player_to_assists(e, home_team, team_hash)
+                                    end
+                                elsif e['type'] == 'owngoal'
+                                    if e['assist'] != nil
+                                        add_player_to_assists(e, home_team, team_hash)
+                                    end
+                                end
+                            end
+                        end
+
+                        if game['away']['events'] != nil
+                            game['away']['events'].each do |e|
+                                if e['type'] == 'goal' or e['type'] == 'penalty'
+                                    next if e['player'] == '??'
+                                    add_player_to_goal_scorers(e, away_team, team_hash)
+
+                                    if e['assist'] != nil
+                                        add_player_to_assists(e, away_team, team_hash)
+                                    end
+                                elsif e['type'] == 'owngoal'
+                                    if e['assist'] != nil
+                                        add_player_to_assists(e, away_team, team_hash)
+                                    end
+                                end
+                            end
+                        end
+
+                        generate_gamepage = true
+                        if generate_interested_teams_gamepage_only
+                            if !(interested_teams.member?(game['home']['key']) ||  interested_teams.member?(game['away']['key']))
+                                generate_gamepage = false
+                            end
+                        end
+
+                        if generate_gamepage
+                            site.pages << GamePage.new(site, site.source, File.join('seasons', season[0], 'games', key), key, game, home_team, away_team)
+                        end
+                    end
+
+
+                    goal_scorers = Array.new
+                    assists_list = Array.new
+
+                    # include all games (groups and knockout for tournament)
+                    League.calculate_table(team_hash, games_pair, 'stats')
+
                     season_name = season[0]
-                    if config['display_name'] != nil
+                    if config != nil and config['display_name'] != nil
                         season_name = config['display_name']
                     end
 
-                    team_info = season[1][config['team_info']]
-
-                    site.pages << PlayerContestSeasonPage.new(site, site.source, File.join('seasons', season[0]), season[0], team_info, config)
-                    next
-                end
-                # -------------------------------------------------------------
-
-                generate_interested_teams_gamepage_only = false
-                if config['interested_teams'] != nil
-                    interested_teams = Set.new(config['interested_teams'])
-                    generate_interested_teams_gamepage_only = true
-                end
-
-                team_hash = season[1]['teams']
-                team_hash.each do |key, team|
-                    team['games'] = Array.new
-                    team['key'] = key
-
-                    team['player_hash'] = Hash.new
-                    if team['players'] != nil
-                        
-                        starting = team['players']['starting']
-                        if starting != nil
-                            starting.each do |p|
-                                p['goals'] = 0
-                                p['penalty'] = 0
-                                p['assists'] = 0
-                                p['penalty_make'] = 0
-                                team['player_hash'][p['name']] = p
-                            end
-                        end
-
-                        subs = team['players']['subs']
-                        if subs != nil
-                            subs.each do |p|
-                                p['goals'] = 0
-                                p['penalty'] = 0
-                                p['assists'] = 0
-                                p['penalty_make'] = 0
-                                team['player_hash'][p['name']] = p
-                            end
-                        end
+                    # For league_table only season, avoid recalculate the 'table', as 'stats' would be the same
+                    stats_is_table = false
+                    if config == nil or config['type'] == 'league_table'
+                        stats_is_table = true
                     end
 
-                    # team['players']['starting'].each{|p| puts p}
-                end
-                # team_array = (team_hash.to_a).map{|key, team| team}
+                    history_team_stats = site.data['history_teams_stats']
+                    team_hash.each do |key, team|
 
-                
+                        team['player_hash'].each do |pk, p|
+                            if p['goals'] > 0
+                                p['teamkey'] = key
+                                goal_scorers << p
+                            end
+                            if p['assists'] > 0
+                                p['teamkey'] = key
+                                assists_list << p
+                            end
+                        end
 
-                games_pair = season[1]['games'].to_a
+                        if stats_is_table
+                            team['table'] = team['stats']
+                        end
 
-                # puts games_pair
+                        if history_team_stats[key] == nil
+                            history_team_stats[key] = Hash.new
+                        end
+                        history_team_stats[key][season[0]] = team['stats']
+                        history_team_stats[key][season[0]]['season_key'] = season[0]
+                        # history_team_stats[key][season[0]]['season_name'] = season_name
+                        history_team_stats[key][season[0]]['display_name'] = season_name
+                        history_team_stats[key][season[0]]['display_name_zh'] = config['display_name_zh']
+                        history_team_stats[key][season[0]]['is_winner'] = config['winner'] == key
 
-                games_hash = Hash.new
+                        # site.pages << TeamPage.new(site, site.source, File.join('seasons', season[0], key), key, team, season[0], season[1])
+                    end
 
-                
-                # generate each game page
-                games_pair.each do |p|
-                    key = p[0]
-                    game = p[1]
-                    games_hash[key] = game
-                    # puts key
-                    # puts game
+                    sorted_goal_scorers = (goal_scorers.sort_by { |p| [ -p['goals'], p['penalty'] ] })
+                    sorted_assists_list = (assists_list.sort_by { |p| [ -p['assists'], p['penalty_make'] ] })
+                    
 
-                    # puts game['away']['key']
+                    # puts games_hash
 
-                    home_team = team_hash[game['home']['key']]
-                    away_team = team_hash[game['away']['key']]
-
-                    if home_team == nil
-                        home_team = {
-                            "display_name" => game['home']['key'],
-                            "logo" => "question-mark.png"
+                    if config == nil
+                        config = {
+                            'type' => 'league_table'
                         }
+                    end
+
+                    if config['type'] == 'league_table'
+                        site.pages << LeagueSeasonPage.new(site, site.source, File.join('seasons', season[0]), team_hash, games_pair, config, season_name)
+                    elsif config['type'] == 'game_list'
+                        site.pages << SimpleGameListSeasonPage.new(site, site.source, File.join('seasons', season[0]), team_hash, games_pair, config, season_name)
                     else
-                        home_team['games'] << p
-                    end
-                    if away_team == nil
-                        away_team = {
-                            "display_name" => game['away']['key'],
-                            "logo" => "question-mark.png"
-                        }
-                    else
-                        away_team['games'] << p
-                    end
+                        # use general season page with multiple stages
 
-                    if home_team['players'] == nil
-                        home_team['players'] = {
-                            "starting" => [],
-                            "subs" => []
-                        }
-                    end
-                    if away_team['players'] == nil
-                        away_team['players'] = {
-                            "starting" => [],
-                            "subs" => []
-                        }
-                    end
-
-                    game['home']['display_name'] = home_team['display_name']
-                    game['home']['display_name_zh'] = home_team['display_name_zh']
-                    game['home']['logo'] = home_team['logo']
-                    game['away']['display_name'] = away_team['display_name']
-                    game['away']['display_name_zh'] = away_team['display_name_zh']
-                    game['away']['logo'] = away_team['logo']
-
-                    if game['home']['events'] != nil
-                        game['home']['events'].each do |e|
-                            if e['type'] == 'goal' or e['type'] == 'penalty'
-                                next if e['player'] == '??'
-                                add_player_to_goal_scorers(e, home_team, team_hash)
-
-                                if e['assist'] != nil
-                                    add_player_to_assists(e, home_team, team_hash)
-                                end
-                            elsif e['type'] == 'owngoal'
-                                if e['assist'] != nil
-                                    add_player_to_assists(e, home_team, team_hash)
-                                end
-                            end
+                        if config['type'] == 'group + knockout'
+                            layout_page = 'season_group_knockout.html'
+                        elsif config['type'] == 'group'
+                            layout_page = 'season_group_knockout.html'
+                        elsif config['type'] == 'division'
+                            layout_page = 'divisions.html'
+                        elsif config['type'] == 'region + knockout'
+                            layout_page = 'season_region_knockouts.html'
+                        elsif config['type'] == 'league_table + region'
+                            # 23春11人制，联赛 + 4队排位
+                            layout_page = 'season_league_region.html'
+                        elsif config['type'] == 'game_list + group + region + knockout'
+                            # 23足联杯，预选赛，勇者杯（17-），大二分排位（1-16），淘汰bracket
+                            layout_page = 'season_big_rank_knockout.html'
+                        elsif config['type'] == 'league_table'
+                            layout_page = 'season.html'
+                        else
+                            # shouldn't reach
+                            layout_page = 'season.html'
                         end
+
+                        stages = config['type'].split(' + ', -1)
+                        # puts stages
+
+                        site.pages << GeneralSeasonPage.new(
+                            site,
+                            site.source,
+                            File.join('seasons', season[0]),
+                            config,
+                            team_hash,
+                            games_hash,
+                            games_pair,
+                            config,
+                            layout_page,
+                            stages)
                     end
 
-                    if game['away']['events'] != nil
-                        game['away']['events'].each do |e|
-                            if e['type'] == 'goal' or e['type'] == 'penalty'
-                                next if e['player'] == '??'
-                                add_player_to_goal_scorers(e, away_team, team_hash)
-
-                                if e['assist'] != nil
-                                    add_player_to_assists(e, away_team, team_hash)
-                                end
-                            elsif e['type'] == 'owngoal'
-                                if e['assist'] != nil
-                                    add_player_to_assists(e, away_team, team_hash)
-                                end
-                            end
-                        end
-                    end
-
-                    generate_gamepage = true
-                    if generate_interested_teams_gamepage_only
-                        if !(interested_teams.member?(game['home']['key']) ||  interested_teams.member?(game['away']['key']))
-                            generate_gamepage = false
-                        end
-                    end
-
-                    if generate_gamepage
-                        site.pages << GamePage.new(site, site.source, File.join('seasons', season[0], 'games', key), key, game, home_team, away_team)
-                    end
-                end
+                    
+                    site.pages << GoalScorerPage.new(site, site.source, File.join('seasons', season[0]), config, sorted_goal_scorers, team_hash, config)
+                    
+                    site.pages << AssistsPage.new(site, site.source, File.join('seasons', season[0]), config, sorted_assists_list, team_hash, config)
 
 
-                goal_scorers = Array.new
-                assists_list = Array.new
-
-                # include all games (groups and knockout for tournament)
-                League.calculate_table(team_hash, games_pair, 'stats')
-
-                season_name = season[0]
-                if config != nil and config['display_name'] != nil
-                    season_name = config['display_name']
-                end
-
-                # For league_table only season, avoid recalculate the 'table', as 'stats' would be the same
-                stats_is_table = false
-                if config == nil or config['type'] == 'league_table'
-                    stats_is_table = true
-                end
-
-                history_team_stats = site.data['history_teams_stats']
-                team_hash.each do |key, team|
-
-                    team['player_hash'].each do |pk, p|
-                        if p['goals'] > 0
-                            p['teamkey'] = key
-                            goal_scorers << p
-                        end
-                        if p['assists'] > 0
-                            p['teamkey'] = key
-                            assists_list << p
-                        end
-                    end
-
-                    if stats_is_table
-                        team['table'] = team['stats']
-                    end
-
-                    if history_team_stats[key] == nil
-                        history_team_stats[key] = Hash.new
-                    end
-                    history_team_stats[key][season[0]] = team['stats']
-                    history_team_stats[key][season[0]]['season_key'] = season[0]
-                    # history_team_stats[key][season[0]]['season_name'] = season_name
-                    history_team_stats[key][season[0]]['display_name'] = season_name
-                    history_team_stats[key][season[0]]['display_name_zh'] = config['display_name_zh']
-                    history_team_stats[key][season[0]]['is_winner'] = config['winner'] == key
-
-                    # site.pages << TeamPage.new(site, site.source, File.join('seasons', season[0], key), key, team, season[0], season[1])
-                end
-
-                sorted_goal_scorers = (goal_scorers.sort_by { |p| [ -p['goals'], p['penalty'] ] })
-                sorted_assists_list = (assists_list.sort_by { |p| [ -p['assists'], p['penalty_make'] ] })
-                
-
-                # puts games_hash
-
-                if config == nil
-                    config = {
-                        'type' => 'league_table'
-                    }
-                end
-
-                if config['type'] == 'league_table'
-                    site.pages << LeagueSeasonPage.new(site, site.source, File.join('seasons', season[0]), team_hash, games_pair, config, season_name)
-                elsif config['type'] == 'game_list'
-                    site.pages << SimpleGameListSeasonPage.new(site, site.source, File.join('seasons', season[0]), team_hash, games_pair, config, season_name)
-                else
-                    # use general season page with multiple stages
-
-                    if config['type'] == 'group + knockout'
-                        layout_page = 'season_group_knockout.html'
-                    elsif config['type'] == 'group'
-                        layout_page = 'season_group_knockout.html'
-                    elsif config['type'] == 'division'
-                        layout_page = 'divisions.html'
-                    elsif config['type'] == 'region + knockout'
-                        layout_page = 'season_region_knockouts.html'
-                    elsif config['type'] == 'league_table + region'
-                        # 23春11人制，联赛 + 4队排位
-                        layout_page = 'season_league_region.html'
-                    elsif config['type'] == 'game_list + group + region + knockout'
-                        # 23足联杯，预选赛，勇者杯（17-），大二分排位（1-16），淘汰bracket
-                        layout_page = 'season_big_rank_knockout.html'
-                    elsif config['type'] == 'league_table'
-                        layout_page = 'season.html'
-                    else
-                        # shouldn't reach
-                        layout_page = 'season.html'
-                    end
-
-                    stages = config['type'].split(' + ', -1)
-                    # puts stages
-
-                    site.pages << GeneralSeasonPage.new(
-                        site,
-                        site.source,
-                        File.join('seasons', season[0]),
-                        config,
-                        team_hash,
-                        games_hash,
-                        games_pair,
-                        config,
-                        layout_page,
-                        stages)
-                end
-
-                
-                site.pages << GoalScorerPage.new(site, site.source, File.join('seasons', season[0]), config, sorted_goal_scorers, team_hash, config)
-                
-                site.pages << AssistsPage.new(site, site.source, File.join('seasons', season[0]), config, sorted_assists_list, team_hash, config)
-
-
-                # puts games_hash
-                # puts games_pair
-                # season table page
-                
-            end # each season
+                    # puts games_hash
+                    # puts games_pair
+                    # season table page
+                    
+                end # each season
+            end # end if site.data['seasons']
 
             site.data['nav_lists'] = Array.new
             site.data['seasons'].each do |season_key, season|
