@@ -35,3 +35,4 @@ gem 'jekyll-tagging'
 
 gem 'logger'
 gem 'csv'
+gem 'base64'
